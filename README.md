@@ -1,4 +1,4 @@
-# Izipizi Task Manager
+# Slush Task Manager
 
 A modern web application that connects to your Notion database for task management with sorting, filtering, and status management capabilities.
 
@@ -36,7 +36,7 @@ Your Notion database should have these properties:
 1. **Clone the repository**
    ```bash
    git clone <your-repo-url>
-   cd izipizi-task-manager
+   cd slush-task-manager
    ```
 
 2. **Install dependencies**
@@ -83,7 +83,7 @@ Your Notion database should have these properties:
    npm run dev
    ```
 
-   Open [http://localhost:3000](http://localhost:3000) to see the application.
+   Open http://localhost:5173 to see the application.
 
 ## Deployment on v0
 
@@ -111,9 +111,10 @@ Use the code structure from this GitHub repository: [paste your repo URL]
 1. Upload the project files to v0
 2. Ensure these key files are included:
    - `package.json`
-   - `next.config.js`
+   - `vite.config.ts`
    - `tailwind.config.js`
-   - All files in `/app`, `/components`, `/lib`, and `/types` directories
+   - `index.html`
+   - All files in `/src`, `/components`, `/lib`, `/api`, and `/types` directories
 
 3. Set environment variables in v0:
    - `NOTION_API_KEY`

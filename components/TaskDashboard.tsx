@@ -5,7 +5,7 @@ import useSWR, { mutate } from 'swr';
 import { NotionTask, FilterOptions } from '@/types/notion';
 import { formatDate, sortTasks, getStatusColor, getPriorityColor, cn } from '@/lib/utils';
 import { ChevronDown, Filter, Calendar, User, Users, CheckCircle, Clock, ExternalLink, Loader2, Play, Check, RotateCcw, Search } from 'lucide-react';
-import { useRouter, useSearchParams } from 'next/navigation';
+// Next.js navigation removed; using window.history and URLSearchParams instead
 
 const fetcher = async (url: string) => {
   const res = await fetch(url);
@@ -17,8 +17,7 @@ const fetcher = async (url: string) => {
 };
 
 export default function TaskDashboard() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
+  // Hydrate filters from URL (CSR)
   const [filters, setFilters] = useState<FilterOptions>({
     sortBy: 'dueDate',
     sortOrder: 'desc',
@@ -31,23 +30,24 @@ export default function TaskDashboard() {
   const [statusActionById, setStatusActionById] = useState<Record<string, 'start' | 'done' | 'reopen'>>({});
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Hydrate filters from URL
   useEffect(() => {
-    const team = searchParams.get('team') || '';
-    const assignee = searchParams.get('assignee') || '';
+    const url = new URL(window.location.href);
+    const team = url.searchParams.get('team') || '';
+    const assignee = url.searchParams.get('assignee') || '';
     if (team !== teamFilter) setTeamFilter(team);
     if (assignee !== assigneeFilter) setAssigneeFilter(assignee);
     // status left out intentionally unless needed later
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams]);
+  }, []);
 
-  // Sync filters to URL
+  // Sync filters to URL (CSR)
   useEffect(() => {
-    const params = new URLSearchParams(searchParams.toString());
-    if (teamFilter) params.set('team', teamFilter); else params.delete('team');
-    if (assigneeFilter) params.set('assignee', assigneeFilter); else params.delete('assignee');
-    const newQuery = params.toString();
-    router.replace(newQuery ? `?${newQuery}` : '?', { scroll: false });
+    const url = new URL(window.location.href);
+    if (teamFilter) url.searchParams.set('team', teamFilter); else url.searchParams.delete('team');
+    if (assigneeFilter) url.searchParams.set('assignee', assigneeFilter); else url.searchParams.delete('assignee');
+    const q = url.searchParams.toString();
+    const newUrl = q ? `${url.pathname}?${q}` : url.pathname;
+    window.history.replaceState({}, '', newUrl);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [teamFilter, assigneeFilter, filters.sortBy, filters.sortOrder]);
 

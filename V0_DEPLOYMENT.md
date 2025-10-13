@@ -1,6 +1,6 @@
-# V0 Deployment Guide for Izipizi Task Manager
+# V0 Deployment Guide for Slush Task Manager
 
-This guide provides specific instructions for deploying the Izipizi Task Manager on v0.dev.
+This guide provides specific instructions for deploying the Slush Task Manager on v0.dev.
 
 ## Quick V0 Setup
 
@@ -99,7 +99,7 @@ NOTION_DATABASE_ID=your_32_character_database_id_here
 **Notion API Key:**
 1. Visit [https://www.notion.com/my-integrations](https://www.notion.com/my-integrations)
 2. Click "New integration"
-3. Name: "Izipizi Task Manager"
+3. Name: "Slush Task Manager"
 4. Select your workspace
 5. Copy the "Internal Integration Secret"
 

@@ -5,7 +5,7 @@ import { Inter } from 'next/font/google';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Izipizi Task Manager',
+  title: 'Slush Task Manager',
   description: 'A simple task management app connected to Notion',
 };
 
