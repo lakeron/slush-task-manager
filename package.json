@@ -2,6 +2,7 @@
   "name": "slush-task-manager",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev:vite": "vite",
     "dev:api": "tsx server/dev-api.ts",
