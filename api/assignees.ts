@@ -1,6 +1,6 @@
 import '../lib/loadEnv';
-import { getAssignees, NOTION_DATABASE_ID } from '@/lib/notion';
-import { withSWRCache } from '@/lib/cache';
+import { getAssignees, NOTION_DATABASE_ID } from '../lib/notion';
+import { withSWRCache } from '../lib/cache';
 
 export default async function handler(req: any, res: any) {
   try {
