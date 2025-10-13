@@ -1,6 +1,6 @@
 import React from 'react';
-import '@/app/globals.css';
-import TaskDashboard from '@/components/TaskDashboard';
+import '../app/globals.css';
+import TaskDashboard from '../components/TaskDashboard';
 
 export default function TaskApp() {
   return (

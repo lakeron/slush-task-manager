@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { updateTaskStatus, updateTaskTeam, updateTaskAssignee, updateTaskAssign } from '@/lib/notion';
-import { deleteByPrefix } from '@/lib/cache';
+import { updateTaskStatus, updateTaskTeam, updateTaskAssignee, updateTaskAssign } from '../../../../lib/notion';
+import { deleteByPrefix } from '../../../../lib/cache';
 
 export const dynamic = 'force-dynamic';
 

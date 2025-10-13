@@ -1,6 +1,6 @@
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
-import { NotionTask } from "@/types/notion";
+import { NotionTask } from "../types/notion";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));

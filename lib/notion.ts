@@ -1,5 +1,5 @@
 import { Client } from '@notionhq/client';
-import { NotionTask, NotionPage } from '@/types/notion';
+import { NotionTask, NotionPage } from '../types/notion';
 
 const NOTION_API_KEY = process.env.NOTION_API_KEY;
 export const NOTION_DATABASE_ID = process.env.NOTION_DATABASE_ID || '';

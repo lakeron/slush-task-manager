@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import useSWR, { mutate } from 'swr';
-import { NotionTask, FilterOptions } from '@/types/notion';
-import { formatDate, sortTasks, getStatusColor, getPriorityColor, cn } from '@/lib/utils';
+import { NotionTask, FilterOptions } from '../types/notion';
+import { formatDate, sortTasks, getStatusColor, getPriorityColor, cn } from '../lib/utils';
 import { ChevronDown, Filter, Calendar, User, Users, CheckCircle, Clock, ExternalLink, Loader2, Play, Check, RotateCcw, Search } from 'lucide-react';
 // Next.js navigation removed; using window.history and URLSearchParams instead
 

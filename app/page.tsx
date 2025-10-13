@@ -1,4 +1,4 @@
-import TaskDashboard from '@/components/TaskDashboard';
+import TaskDashboard from '../components/TaskDashboard';
 
 export default function Home() {
   return (

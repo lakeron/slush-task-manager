@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAssignOptions, NOTION_DATABASE_ID } from '@/lib/notion';
-import { withSWRCache } from '@/lib/cache';
+import { getAssignOptions, NOTION_DATABASE_ID } from '../../../lib/notion';
+import { withSWRCache } from '../../../lib/cache';
 
 export const dynamic = 'force-dynamic';
 
