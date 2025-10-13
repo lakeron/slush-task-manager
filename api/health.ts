@@ -1,4 +1,4 @@
-import '../lib/loadEnv';
+import '../lib/loadEnv.js';
 import { Client } from '@notionhq/client';
 
 export default async function handler(_req: any, res: any) {

@@ -1,6 +1,6 @@
-import '../../lib/loadEnv';
-import { updateTaskStatus, updateTaskTeam, updateTaskAssignee, updateTaskAssign } from '../../lib/notion';
-import { deleteByPrefix } from '../../lib/cache';
+import '../../lib/loadEnv.js';
+import { updateTaskStatus, updateTaskTeam, updateTaskAssignee, updateTaskAssign } from '../../lib/notion.js';
+import { deleteByPrefix } from '../../lib/cache.js';
 
 export default async function handler(req: any, res: any) {
   try {

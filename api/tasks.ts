@@ -1,6 +1,6 @@
-import '../lib/loadEnv';
-import { getNotionTasks, getFilteredTasks, NOTION_DATABASE_ID } from '../lib/notion';
-import { withSWRCache } from '../lib/cache';
+import '../lib/loadEnv.js';
+import { getNotionTasks, getFilteredTasks, NOTION_DATABASE_ID } from '../lib/notion.js';
+import { withSWRCache } from '../lib/cache.js';
 
 export default async function handler(req: any, res: any) {
   try {
