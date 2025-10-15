@@ -1,212 +1,244 @@
 # Slush Task Manager
 
-A modern web application that connects to your Notion database for task management with sorting, filtering, and status management capabilities.
-
-## Features
-
-- 🔗 **Notion Integration**: Connect directly to your Notion database
-- 🎯 **Smart Filtering**: Filter tasks by team and assignee
-- 📅 **Date Sorting**: Sort tasks by creation date, due date, or last modified
-- ✅ **Status Management**: Toggle tasks between "Done" and "In Progress"
-- 📱 **Responsive Design**: Works seamlessly on desktop and mobile
-- ⚡ **Real-time Updates**: Changes sync immediately with Notion
+A task management web app that syncs with your Notion database. Built with Vite + React + TypeScript.
 
 ## Prerequisites
 
-Before running this application, you need:
+- Node.js 18.17 or higher
+- A Notion account with API access
+- A Notion database with tasks
 
-1. A Notion account with a database containing tasks
-2. A Notion integration with API access
-3. Node.js 18+ installed on your system
+## Local Development Setup
 
-## Notion Database Setup
+### 1. Install Dependencies
 
-Your Notion database should have these properties:
-
-- **Name** (Title): Task title
-- **Status** (Select): Options should include "Not Started", "In Progress", "Done"
-- **Team** (Select): Team names
-- **Assignee** (People): Person assigned to the task
-- **Due Date** (Date): Optional due date
-- **Priority** (Select): Optional priority levels (Low, Medium, High)
-- **Description** (Rich Text): Optional task description
-
-## Installation & Setup
-
-1. **Clone the repository**
-   ```bash
-   git clone <your-repo-url>
-   cd slush-task-manager
-   ```
-
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
-
-3. **Set up environment variables**
-   ```bash
-   cp .env.example .env.local
-   ```
-
-   Edit `.env.local` and add your Notion credentials and optional Redis cache settings:
-   ```
-   NOTION_API_KEY=your_notion_integration_secret
-   NOTION_DATABASE_ID=your_database_id
-   # Optional: Upstash Redis for shared cache (recommended for serverless)
-   UPSTASH_REDIS_REST_URL=your_upstash_redis_rest_url
-   UPSTASH_REDIS_REST_TOKEN=your_upstash_redis_rest_token
-   # Optional: Cache tuning
-   CACHE_FRESH_TTL_SECONDS=60
-   CACHE_STALE_MAX_AGE_SECONDS=300
-   ```
-
-4. **Get your Notion API key**
-   - Go to https://www.notion.com/my-integrations
-   - Click "New integration"
-   - Name your integration and select your workspace
-   - Copy the "Internal Integration Secret"
-
-5. **Get your Database ID**
-   - Open your Notion database
-   - Copy the URL - the database ID is the 32-character string after the last slash
-   - Example: `https://notion.so/myworkspace/a8aec43384f447ed84390e8e42c2e089?v=...`
-   - Database ID: `a8aec43384f447ed84390e8e42c2e089`
-
-6. **Connect your integration to the database**
-   - In your Notion database, click the "..." menu
-   - Select "Add connections"
-   - Choose your integration
-
-7. **Run the development server**
-   ```bash
-   npm run dev
-   ```
-
-   Open http://localhost:5173 to see the application.
-
-## Deployment on v0
-
-This application is optimized for deployment on v0 (Vercel's AI-powered development platform):
-
-### Method 1: Direct v0 Creation
-
-1. Go to [v0.dev](https://v0.dev)
-2. Use this prompt:
-
-```
-Create a task management web app with the following features:
-- Connects to Notion database for tasks
-- Filter tasks by team and assignee
-- Sort tasks by date (created, modified, due date)
-- Toggle task status between "Done" and "In Progress"
-- View completed tasks separately
-- Responsive design with Tailwind CSS
-
-Use the code structure from this GitHub repository: [paste your repo URL]
+```bash
+npm install
 ```
 
-### Method 2: Manual Setup on v0
+### 2. Get Notion Credentials
 
-1. Upload the project files to v0
-2. Ensure these key files are included:
-   - `package.json`
-   - `vite.config.ts`
-   - `tailwind.config.js`
-   - `index.html`
-   - All files in `/src`, `/components`, `/lib`, `/api`, and `/types` directories
+**Create Notion Integration:**
+1. Go to https://www.notion.com/my-integrations
+2. Click "New integration"
+3. Name it (e.g., "Task Manager Dev")
+4. Copy the "Internal Integration Secret" (this is your `NOTION_API_KEY`)
 
-3. Set environment variables in v0:
-   - `NOTION_API_KEY`
-   - `NOTION_DATABASE_ID`
+**Get Database ID:**
+1. Open your Notion database in a browser
+2. Copy the URL
+3. Extract the 32-character ID:
+   ```
+   https://notion.so/workspace/a8aec43384f447ed84390e8e42c2e089?v=...
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                              This is your NOTION_DATABASE_ID
+   ```
 
-### Method 3: Deploy to Vercel
+**Connect Integration to Database:**
+1. In your Notion database, click the "⋯" menu (top right)
+2. Click "Add connections"
+3. Select your integration
 
-1. Connect your GitHub repository to Vercel
-2. Set environment variables in Vercel dashboard
-3. Deploy with one click
+### 3. Configure Environment
 
-## Usage
+Create `.env.local` in the project root:
 
-### Main Dashboard
+```bash
+NOTION_API_KEY=secret_xxxxxxxxxxxxx
+NOTION_DATABASE_ID=a8aec43384f447ed84390e8e42c2e089
+```
 
-- **View Active Tasks**: See all tasks that are not marked as "Done"
-- **View Completed Tasks**: Toggle to see all completed tasks
-- **Filter by Team**: Use dropdown to filter tasks by team
-- **Filter by Assignee**: Use dropdown to filter tasks by assignee
-- **Sort Options**: Click sort buttons to sort by creation date, due date, last modified, or title
+Optional Redis cache (for production):
+```bash
+UPSTASH_REDIS_REST_URL=https://your-redis.upstash.io
+UPSTASH_REDIS_REST_TOKEN=your_token
+CACHE_FRESH_TTL_SECONDS=60
+CACHE_STALE_MAX_AGE_SECONDS=300
+```
 
-### Task Management
+### 4. Notion Database Structure
 
-- **Mark as Done**: Click "Mark Done" button on any active task
-- **Reopen Task**: Click "Reopen Task" button on completed tasks to move back to "In Progress"
-- **Real-time Sync**: All changes are immediately synced with your Notion database
+Your database must have these properties:
 
-## API Endpoints
+| Property   | Type       | Required | Notes                                    |
+|------------|------------|----------|------------------------------------------|
+| Name       | Title      | ✅ Yes   | Task title                               |
+| Status     | Select     | ✅ Yes   | Options: "Not Started", "In Progress", "Done" |
+| Team       | Select     | ❌ No    | Your team names                          |
+| Assignee   | People     | ❌ No    | Task assignee                            |
+| Due Date   | Date       | ❌ No    | Task deadline                            |
+| Priority   | Select     | ❌ No    | Options: "Low", "Medium", "High"         |
+| Description| Rich Text  | ❌ No    | Task details                             |
 
-- `GET /api/tasks` - Fetch all tasks with optional filters
-- `PATCH /api/tasks/[id]` - Update task status
+### 5. Start Development Servers
 
-## Technology Stack
+```bash
+npm run dev
+```
 
-- **Framework**: Next.js 14 with App Router
-- **Styling**: Tailwind CSS with custom design system
-- **Data Fetching**: SWR for real-time data synchronization
-- **API Integration**: Notion SDK
-- **Icons**: Lucide React
-- **TypeScript**: Full type safety
+This starts:
+- **Vite dev server** on http://localhost:5173 (UI)
+- **Express API server** on http://localhost:3000 (API endpoints)
 
-## Customization
+Open http://localhost:5173 in your browser.
 
-### Adding New Task Properties
+### Development Commands
 
-1. Update the `NotionTask` interface in `/types/notion.ts`
-2. Modify the data mapping in `/lib/notion.ts`
-3. Update the UI components in `/components/TaskDashboard.tsx`
+```bash
+npm run dev        # Start both UI and API servers
+npm run dev:vite   # Start only UI server
+npm run dev:api    # Start only API server
+npm run build      # Build for production
+npm run preview    # Preview production build
+```
 
-### Styling
+## Vercel Deployment
 
-The application uses Tailwind CSS with a custom design system. You can modify:
-- Colors and themes in `tailwind.config.js`
-- Global styles in `app/globals.css`
-- Component styles directly in the React components
+### 1. Connect to Vercel
+
+```bash
+# Install Vercel CLI (optional)
+npm i -g vercel
+
+# Deploy
+vercel
+```
+
+Or connect via GitHub:
+1. Push code to GitHub
+2. Go to https://vercel.com/new
+3. Import your repository
+
+### 2. Configure Environment Variables
+
+In Vercel Dashboard → Project → Settings → Environment Variables:
+
+```
+NOTION_API_KEY=secret_xxxxxxxxxxxxx
+NOTION_DATABASE_ID=a8aec43384f447ed84390e8e42c2e089
+```
+
+**Important:** Add these for all environments (Production, Preview, Development)
+
+### 3. Deploy
+
+Vercel auto-deploys on push to main branch.
+
+Or manually:
+```bash
+vercel --prod
+```
+
+### 4. Verify Deployment
+
+Check these endpoints:
+- `https://your-app.vercel.app/` - UI should load
+- `https://your-app.vercel.app/api/health` - Should return `{"ok":true,"notion":{"ok":true}}`
+- `https://your-app.vercel.app/api/tasks` - Should return tasks JSON
+
+If `/api/health` shows `"notion":{"ok":false}`, check:
+- Environment variables are set correctly
+- Notion integration has database access
+- Database ID is correct
 
 ## Troubleshooting
 
-### Common Issues
+### "Error loading tasks" in UI
 
-1. **"Failed to fetch tasks" error**
-   - Check your Notion API key and database ID
-   - Ensure the integration has access to your database
-   - Verify database property names match the code
-   - If using Redis cache, verify Upstash env vars are set correctly
+**Check 1: Environment Variables**
+```bash
+# Local: Ensure .env.local exists with correct values
+cat .env.local
 
-2. **Tasks not updating**
-   - Check browser console for errors
-   - Verify network connectivity
-   - Ensure proper API endpoint configuration
-
-3. **Styling issues on v0**
-   - Make sure all Tailwind classes are properly configured
-   - Check that PostCSS configuration is included
-
-### Debug Mode
-
-Add `console.log` statements in `/lib/notion.ts` to debug API responses. You can also inspect cache behavior via response headers (`X-Cache`, `X-Cache-Fresh`, `X-Cooldown`):
-
-```javascript
-console.log('Notion API Response:', response);
-console.log('Parsed Tasks:', tasks);
+# Vercel: Check Settings → Environment Variables
 ```
 
-## Contributing
+**Check 2: Notion Integration Access**
+```
+1. Open your database in Notion
+2. Click "⋯" → "Connections"
+3. Your integration should be listed
+4. If not, click "Add connections" and select it
+```
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Test thoroughly
-5. Submit a pull request
+**Check 3: Database Property Names**
+```
+Property names are case-sensitive and must match exactly:
+- "Name" (not "name" or "Title")
+- "Status" (not "status")
+- etc.
+```
+
+### API Errors (500, Module Not Found)
+
+**Local Development:**
+```bash
+# Restart servers
+pkill -f vite; pkill -f dev-api
+npm run dev
+```
+
+**Vercel:**
+- Check build logs in Vercel Dashboard
+- Verify all `.ts` files use `.js` extensions in imports:
+  ```typescript
+  // ✅ Correct
+  import { something } from '../lib/notion.js';
+  
+  // ❌ Wrong
+  import { something } from '../lib/notion';
+  ```
+
+### Build Failures
+
+**"Cannot use import statement outside a module"**
+- Check `package.json` has `"type": "module"`
+- CommonJS config files must use `.cjs` extension
+
+**"Failed to load PostCSS config"**
+- Ensure `postcss.config.cjs` and `tailwind.config.cjs` have `.cjs` extension
+
+## Project Structure
+
+```
+notion-web/
+├── api/                    # Serverless functions (Vercel)
+│   ├── tasks.ts           # GET /api/tasks
+│   ├── tasks/[id].ts      # PATCH /api/tasks/:id
+│   ├── assignees.ts       # GET /api/assignees
+│   ├── assign-options.ts  # GET /api/assign-options
+│   └── health.ts          # GET /api/health
+├── server/
+│   └── dev-api.ts         # Local Express API (dev only)
+├── src/
+│   ├── App.tsx            # Root React component
+│   ├── main.tsx           # Vite entry point
+│   └── index.css          # Base styles
+├── components/
+│   └── TaskDashboard.tsx  # Main UI component
+├── lib/
+│   ├── notion.ts          # Notion API client
+│   ├── cache.ts           # SWR cache headers
+│   ├── utils.ts           # Utility functions
+│   └── loadEnv.ts         # Env loader
+├── types/
+│   └── notion.ts          # TypeScript types
+├── .env.local             # Local environment (not committed)
+├── package.json           # Dependencies & scripts
+├── vite.config.ts         # Vite configuration
+├── vercel.json            # Vercel build config
+└── tsconfig.json          # TypeScript config
+```
+
+## Tech Stack
+
+- **Frontend:** React 18 + TypeScript + Vite
+- **Styling:** Tailwind CSS
+- **API:** Notion SDK + Vercel Serverless Functions
+- **Data Fetching:** SWR (stale-while-revalidate)
+- **Local Dev:** Express + tsx
+- **Deployment:** Vercel
 
 ## License
 
-MIT License - feel free to use this project for personal or commercial purposes.
+MIT
