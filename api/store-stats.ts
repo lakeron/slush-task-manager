@@ -8,7 +8,7 @@ export default async function handler(req: any, res: any) {
       return;
     }
 
-    const stats = getStoreStats();
+    const stats = await getStoreStats();
     res.status(200).json(stats);
   } catch (error) {
     console.error('Error getting store stats:', error);

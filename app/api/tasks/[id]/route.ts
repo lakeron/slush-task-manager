@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { updateTaskStatus, updateTaskTeam, updateTaskAssignee, updateTaskAssign } from '../../../../lib/notion';
 import { updateTask } from '../../../../lib/memory-store';
+import { invalidateCache } from '../../../../lib/redis-cache';
 
 export const dynamic = 'force-dynamic';
 
@@ -39,10 +40,13 @@ export async function PATCH(
       memoryUpdates.assign = assign || undefined;
     }
 
-    // Update memory store immediately after successful Notion update
+    // Update memory store immediately after successful Notion update (local dev)
     if (Object.keys(memoryUpdates).length > 0) {
       updateTask(taskId, memoryUpdates);
     }
+
+    // Invalidate Redis cache (production)
+    await invalidateCache();
 
     return NextResponse.json({ success: true });
   } catch (error) {

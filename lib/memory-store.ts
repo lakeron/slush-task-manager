@@ -1,9 +1,11 @@
 import { NotionTask } from '../types/notion';
 import { getNotionTasks } from './notion.js';
+import { getCachedTasks, setCachedTasks, getCacheStats, isRedisAvailable } from './redis-cache.js';
 
 // Configuration from environment variables
 const REFRESH_INTERVAL_SECONDS = Number(process.env.REFRESH_INTERVAL_SECONDS || 60);
 const RATE_LIMIT_COOLDOWN_SECONDS = Number(process.env.RATE_LIMIT_COOLDOWN_SECONDS || 60);
+const USE_REDIS = isRedisAvailable();
 
 // In-memory store state
 interface StoreState {
@@ -130,11 +132,29 @@ export function startBackgroundRefresh(): void {
 }
 
 /**
- * Get tasks from memory store
- * Triggers initial fetch if store is empty
+ * Get tasks from memory store (local) or Upstash Redis (production)
  */
 export async function getTasks(): Promise<NotionTask[]> {
-  // Start background refresh on first call
+  // Production with Redis: Use Upstash cache
+  if (USE_REDIS) {
+    console.log('[memory-store] Redis mode: checking Upstash cache');
+    const cached = await getCachedTasks();
+    
+    if (cached) {
+      const ageSeconds = Math.floor((Date.now() - cached.fetchedAt) / 1000);
+      console.log(`[memory-store] Redis cache hit (age: ${ageSeconds}s)`);
+      return cached.tasks;
+    }
+    
+    // Cache miss: fetch from Notion and cache
+    console.log('[memory-store] Redis cache miss: fetching from Notion');
+    const tasks = await getNotionTasks();
+    await setCachedTasks(tasks);
+    return tasks;
+  }
+
+  // Local dev: Use in-memory store with background refresh
+  console.log('[memory-store] Local mode: using in-memory store');
   startBackgroundRefresh();
 
   // If store is empty, do an initial fetch
@@ -178,7 +198,26 @@ export function updateTask(taskId: string, updates: Partial<NotionTask>): boolea
 /**
  * Get store statistics for debugging
  */
-export function getStoreStats() {
+export async function getStoreStats() {
+  // Production with Redis: Return Redis cache stats
+  if (USE_REDIS) {
+    const redisStats = await getCacheStats();
+    return {
+      taskCount: 0, // Redis doesn't track count without fetching
+      fetchedAt: null,
+      ageSeconds: redisStats.ageSeconds,
+      isRefreshing: false,
+      isInCooldown: false,
+      cooldownSeconds: 0,
+      lastError: null,
+      refreshInterval: REFRESH_INTERVAL_SECONDS,
+      useRedis: true,
+      cacheExists: redisStats.exists,
+      cacheTTL: redisStats.ttl,
+    };
+  }
+
+  // Local dev: Return in-memory store stats
   const ageSeconds = store.fetchedAt ? Math.floor((nowMs() - store.fetchedAt) / 1000) : null;
   const cooldownSeconds = store.cooldownUntil ? Math.ceil((store.cooldownUntil - nowMs()) / 1000) : 0;
 
@@ -191,6 +230,9 @@ export function getStoreStats() {
     cooldownSeconds: cooldownSeconds > 0 ? cooldownSeconds : 0,
     lastError: store.lastError,
     refreshInterval: REFRESH_INTERVAL_SECONDS,
+    useRedis: false,
+    cacheExists: store.tasks.length > 0,
+    cacheTTL: null,
   };
 }
 

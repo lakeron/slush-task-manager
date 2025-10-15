@@ -14,6 +14,9 @@ interface StoreStats {
   cooldownSeconds: number;
   lastError: string | null;
   refreshInterval: number;
+  useRedis?: boolean;
+  cacheExists?: boolean;
+  cacheTTL?: number | null;
 }
 
 const fetcher = async (url: string) => {
@@ -42,7 +45,36 @@ export default function StoreStatusIndicator() {
     return null; // Don't show if there's an error or no data
   }
 
-  const { ageSeconds, refreshInterval, isRefreshing, isInCooldown, cooldownSeconds, lastError } = stats;
+  const { ageSeconds, refreshInterval, isRefreshing, isInCooldown, cooldownSeconds, lastError, useRedis, cacheExists, cacheTTL } = stats;
+
+  // In Redis mode: Show Upstash cache status
+  if (useRedis) {
+    if (!cacheExists) {
+      return (
+        <div
+          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600"
+          title="Upstash Redis: Cache empty, will fetch on next request"
+        >
+          <Clock className="w-3 h-3" />
+          <span>Cache empty</span>
+        </div>
+      );
+    }
+
+    // Show cache age and TTL
+    const ttlDisplay = cacheTTL ? `${cacheTTL}s TTL` : 'expired';
+    const ageDisplay = ageSeconds ? formatTimeAgo(ageSeconds) : 'just now';
+    
+    return (
+      <div
+        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium bg-green-100 text-green-700"
+        title={`Upstash Redis cached • Expires in ${cacheTTL}s`}
+      >
+        <CheckCircle className="w-3 h-3" />
+        <span>Cached {ageDisplay} • {ttlDisplay}</span>
+      </div>
+    );
+  }
 
   // Calculate status color based on age relative to refresh interval
   const getStatusColor = (): { bg: string; text: string; icon: JSX.Element } => {

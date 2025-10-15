@@ -1,6 +1,7 @@
 import '../../lib/loadEnv.js';
 import { updateTaskStatus, updateTaskTeam, updateTaskAssignee, updateTaskAssign } from '../../lib/notion.js';
 import { updateTask } from '../../lib/memory-store.js';
+import { invalidateCache } from '../../lib/redis-cache.js';
 
 export default async function handler(req: any, res: any) {
   try {
@@ -39,10 +40,13 @@ export default async function handler(req: any, res: any) {
       memoryUpdates.assign = assign || undefined;
     }
 
-    // Update memory store immediately after successful Notion update
+    // Update memory store immediately after successful Notion update (local dev)
     if (Object.keys(memoryUpdates).length > 0) {
       updateTask(id, memoryUpdates);
     }
+
+    // Invalidate Redis cache (production)
+    await invalidateCache();
 
     res.status(200).json({ success: true });
   } catch (error) {
