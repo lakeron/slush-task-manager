@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAssignOptions, NOTION_DATABASE_ID } from '../../../lib/notion';
-import { withSWRCache } from '../../../lib/cache';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,10 +11,8 @@ export async function GET(_request: NextRequest) {
         { status: 500 }
       );
     }
-    const key = 'notion:assign:options';
-    const result = await withSWRCache(key, () => getAssignOptions(), { freshTtl: 60, staleMaxAge: 300 });
-    const headers = new Headers(result.headers);
-    return new NextResponse(JSON.stringify({ options: result.data }), { status: 200, headers });
+    const options = await getAssignOptions();
+    return NextResponse.json({ options });
   } catch (error) {
     console.error('Error in assign-options API:', error);
     return NextResponse.json(

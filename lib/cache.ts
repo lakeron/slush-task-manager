@@ -1,3 +1,14 @@
+/**
+ * @deprecated This cache system has been replaced with memory-store.ts
+ * 
+ * The SWR cache system with Redis/Upstash has been replaced with a simpler
+ * in-memory task store that provides immediate consistency after updates.
+ * 
+ * See lib/memory-store.ts for the new implementation.
+ * 
+ * This file is kept for reference but is no longer used by the application.
+ */
+
 import { Redis } from '@upstash/redis';
 
 type CacheRecord<T> = {

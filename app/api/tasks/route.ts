@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getNotionTasks, getFilteredTasks, NOTION_DATABASE_ID } from '../../../lib/notion';
-import { withSWRCache } from '../../../lib/cache';
+import { NOTION_DATABASE_ID } from '../../../lib/notion';
+import { getTasks } from '../../../lib/memory-store';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,29 +12,28 @@ export async function GET(request: NextRequest) {
         { status: 500 }
       );
     }
+    
+    // Get all tasks from memory store
+    const allTasks = await getTasks();
+    
     const searchParams = request.nextUrl.searchParams;
     const team = searchParams.get('team');
     const assignee = searchParams.get('assignee');
     const status = searchParams.get('status');
 
-    let tasks;
+    // Apply client-side filtering if needed
+    let filteredTasks = allTasks;
 
     if (team || assignee || status) {
-      const filters: any = {};
-      if (team) filters.team = team;
-      if (assignee) filters.assignee = assignee;
-      if (status) filters.status = status;
-
-      const key = `notion:tasks:filtered:${team || 'any'}:${assignee || 'any'}:${status || 'any'}`;
-      const result = await withSWRCache(key, () => getFilteredTasks(filters));
-      const headers = new Headers(result.headers);
-      return new NextResponse(JSON.stringify({ tasks: result.data }), { status: 200, headers });
-    } else {
-      const key = 'notion:tasks:all';
-      const result = await withSWRCache(key, () => getNotionTasks());
-      const headers = new Headers(result.headers);
-      return new NextResponse(JSON.stringify({ tasks: result.data }), { status: 200, headers });
+      filteredTasks = allTasks.filter(task => {
+        if (team && task.team !== team) return false;
+        if (assignee && task.assign !== assignee) return false;
+        if (status && task.status !== status) return false;
+        return true;
+      });
     }
+
+    return NextResponse.json({ tasks: filteredTasks });
   } catch (error) {
     console.error('Error in tasks API:', error);
     return NextResponse.json(

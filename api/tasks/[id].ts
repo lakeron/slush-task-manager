@@ -1,6 +1,6 @@
 import '../../lib/loadEnv.js';
 import { updateTaskStatus, updateTaskTeam, updateTaskAssignee, updateTaskAssign } from '../../lib/notion.js';
-import { deleteByPrefix } from '../../lib/cache.js';
+import { updateTask } from '../../lib/memory-store.js';
 
 export default async function handler(req: any, res: any) {
   try {
@@ -18,23 +18,30 @@ export default async function handler(req: any, res: any) {
 
     const { status, team, assigneeId, assign } = req.body || {};
 
+    // Prepare updates for memory store
+    const memoryUpdates: any = {};
+
+    // Update Notion API first
     if (typeof status !== 'undefined') {
       await updateTaskStatus(id, status);
+      memoryUpdates.status = status;
     }
     if (typeof team !== 'undefined') {
       await updateTaskTeam(id, team || null);
+      memoryUpdates.team = team || undefined;
     }
     if (typeof assigneeId !== 'undefined') {
       await updateTaskAssignee(id, assigneeId || null);
+      memoryUpdates.assigneeId = assigneeId || undefined;
     }
     if (typeof assign !== 'undefined') {
       await updateTaskAssign(id, assign || null);
+      memoryUpdates.assign = assign || undefined;
     }
 
-    try {
-      await deleteByPrefix('notion:tasks:');
-    } catch (e) {
-      console.error('Cache invalidation error:', e);
+    // Update memory store immediately after successful Notion update
+    if (Object.keys(memoryUpdates).length > 0) {
+      updateTask(id, memoryUpdates);
     }
 
     res.status(200).json({ success: true });

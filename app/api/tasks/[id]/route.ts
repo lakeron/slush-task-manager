@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { updateTaskStatus, updateTaskTeam, updateTaskAssignee, updateTaskAssign } from '../../../../lib/notion';
-import { deleteByPrefix } from '../../../../lib/cache';
+import { updateTask } from '../../../../lib/memory-store';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,26 +18,32 @@ export async function PATCH(
     const { status, team, assigneeId, assign } = await request.json();
     const taskId = params.id;
 
+    // Prepare updates for memory store
+    const memoryUpdates: any = {};
+
+    // Update Notion API first
     if (typeof status !== 'undefined') {
       await updateTaskStatus(taskId, status);
+      memoryUpdates.status = status;
     }
     if (typeof team !== 'undefined') {
       await updateTaskTeam(taskId, team || null);
+      memoryUpdates.team = team || undefined;
     }
     if (typeof assigneeId !== 'undefined') {
       await updateTaskAssignee(taskId, assigneeId || null);
+      memoryUpdates.assigneeId = assigneeId || undefined;
     }
     if (typeof assign !== 'undefined') {
       await updateTaskAssign(taskId, assign || null);
+      memoryUpdates.assign = assign || undefined;
     }
 
-    // Invalidate caches related to tasks so subsequent GET returns fresh
-    try {
-      await deleteByPrefix('notion:tasks:');
-    } catch (e) {
-      // avoid failing the request if invalidation fails
-      console.error('Cache invalidation error:', e);
+    // Update memory store immediately after successful Notion update
+    if (Object.keys(memoryUpdates).length > 0) {
+      updateTask(taskId, memoryUpdates);
     }
+
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error updating task:', error);

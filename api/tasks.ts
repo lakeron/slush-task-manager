@@ -1,6 +1,6 @@
 import '../lib/loadEnv.js';
-import { getNotionTasks, getFilteredTasks, NOTION_DATABASE_ID } from '../lib/notion.js';
-import { withSWRCache } from '../lib/cache.js';
+import { NOTION_DATABASE_ID } from '../lib/notion.js';
+import { getTasks } from '../lib/memory-store.js';
 
 export default async function handler(req: any, res: any) {
   try {
@@ -14,27 +14,26 @@ export default async function handler(req: any, res: any) {
       return;
     }
 
+    // Get all tasks from memory store
+    const allTasks = await getTasks();
+
+    // Apply client-side filtering if needed
     const team = (req.query.team as string) || undefined;
     const assignee = (req.query.assignee as string) || undefined;
     const status = (req.query.status as string) || undefined;
 
-    if (team || assignee || status) {
-      const filters: any = {};
-      if (team) filters.team = team;
-      if (assignee) filters.assignee = assignee;
-      if (status) filters.status = status;
+    let filteredTasks = allTasks;
 
-      const key = `notion:tasks:filtered:${team || 'any'}:${assignee || 'any'}:${status || 'any'}`;
-      const result = await withSWRCache(key, () => getFilteredTasks(filters));
-      Object.entries(result.headers).forEach(([k, v]) => res.setHeader(k, v));
-      res.status(200).json({ tasks: result.data });
-      return;
+    if (team || assignee || status) {
+      filteredTasks = allTasks.filter(task => {
+        if (team && task.team !== team) return false;
+        if (assignee && task.assign !== assignee) return false;
+        if (status && task.status !== status) return false;
+        return true;
+      });
     }
 
-    const key = 'notion:tasks:all';
-    const result = await withSWRCache(key, () => getNotionTasks());
-    Object.entries(result.headers).forEach(([k, v]) => res.setHeader(k, v));
-    res.status(200).json({ tasks: result.data });
+    res.status(200).json({ tasks: filteredTasks });
   } catch (error) {
     console.error('Error in tasks API:', error);
     res.status(500).json({ error: 'Failed to fetch tasks' });
