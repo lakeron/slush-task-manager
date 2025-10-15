@@ -42,34 +42,49 @@ Update → Notion API + Invalidate Redis cache → Next request fetches fresh da
 
 ### 3. Get Credentials
 
-After creating, you'll see:
+After creating, you'll see multiple connection options. You can use **either**:
+
+**Option A: Traditional Redis URL (Simplest)**
+- **REDIS_URL** or **KV_URL** - e.g., `rediss://default:TOKEN@host.upstash.io:6379`
+
+**Option B: REST API (Also works)**
 - **UPSTASH_REDIS_REST_URL** - e.g., `https://your-db.upstash.io`
 - **UPSTASH_REDIS_REST_TOKEN** - Your access token
 
+The app automatically parses either format!
+
 ### 4. Add to Vercel
 
-#### Option A: Vercel Dashboard
+#### Option A: Vercel Dashboard (Simplest)
 1. Go to your Vercel project
 2. Settings → Environment Variables
-3. Add variables:
+3. Add ONE of these formats:
+
+**Format 1: Single Redis URL (Recommended)**
+   ```
+   KV_URL=rediss://default:YOUR_TOKEN@your-db.upstash.io:6379
+   CACHE_TTL_SECONDS=60
+   ```
+
+**Format 2: Separate REST Credentials**
    ```
    UPSTASH_REDIS_REST_URL=https://your-db.upstash.io
    UPSTASH_REDIS_REST_TOKEN=your_token_here
    CACHE_TTL_SECONDS=60
    ```
+
 4. Select environments: Production, Preview, Development
 5. Deploy
 
 #### Option B: Vercel CLI
 ```bash
+# Using Redis URL format
+vercel env add KV_URL
+# Paste your rediss:// URL when prompted
+
+# OR using REST format
 vercel env add UPSTASH_REDIS_REST_URL
-# Paste your URL when prompted
-
-vercel env add UPSTASH_REDIS_REST_TOKEN  
-# Paste your token when prompted
-
-vercel env add CACHE_TTL_SECONDS
-# Enter: 60
+vercel env add UPSTASH_REDIS_REST_TOKEN
 ```
 
 ### 5. Deploy
@@ -86,7 +101,12 @@ For local development, the app uses in-memory store automatically (no Redis need
 
 If you want to test Redis locally:
 ```bash
-# Add to .env.local
+# Add to .env.local (either format works)
+
+# Format 1: Redis URL (from Vercel KV or Upstash)
+KV_URL=rediss://default:YOUR_TOKEN@your-db.upstash.io:6379
+
+# Format 2: REST API credentials
 UPSTASH_REDIS_REST_URL=https://your-db.upstash.io
 UPSTASH_REDIS_REST_TOKEN=your_token_here
 ```
@@ -305,7 +325,12 @@ New Redis cache benefits:
 ## Environment Variables Summary
 
 ```bash
-# Required for Production (Vercel)
+# Required for Production (Vercel) - Choose ONE format:
+
+# Format 1: Redis URL (Simplest)
+KV_URL=rediss://default:TOKEN@host.upstash.io:6379
+
+# Format 2: REST API (Alternative)
 UPSTASH_REDIS_REST_URL=https://your-db.upstash.io
 UPSTASH_REDIS_REST_TOKEN=your_token_here
 

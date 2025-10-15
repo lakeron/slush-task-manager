@@ -4,13 +4,63 @@ import { NotionTask } from '../types/notion';
 const CACHE_TTL_SECONDS = Number(process.env.CACHE_TTL_SECONDS || 60);
 const IS_PRODUCTION = process.env.VERCEL === '1' || process.env.NODE_ENV === 'production';
 
-// Only initialize Redis in production with credentials
-const redis = IS_PRODUCTION && process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN
-  ? new Redis({
+/**
+ * Parse Redis connection URL to extract REST API credentials
+ * Supports multiple environment variable formats for maximum compatibility
+ */
+function getRedisCredentials(): { url: string; token: string } | null {
+  // Option 1: Upstash REST API credentials
+  if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
+    return {
       url: process.env.UPSTASH_REDIS_REST_URL,
       token: process.env.UPSTASH_REDIS_REST_TOKEN,
+    };
+  }
+
+  // Option 2: Vercel KV REST API credentials
+  if (process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) {
+    return {
+      url: process.env.KV_REST_API_URL,
+      token: process.env.KV_REST_API_TOKEN,
+    };
+  }
+
+  // Option 3: Parse from KV_URL or REDIS_URL (traditional Redis connection string)
+  const redisUrl = process.env.KV_URL || process.env.REDIS_URL;
+  if (redisUrl) {
+    try {
+      // Parse: rediss://default:PASSWORD@HOST:PORT
+      const match = redisUrl.match(/rediss?:\/\/[^:]*:([^@]+)@([^:]+)/);
+      if (match) {
+        const token = match[1];
+        const host = match[2];
+        return {
+          url: `https://${host}`,
+          token: token,
+        };
+      }
+    } catch (error) {
+      console.error('[redis-cache] Failed to parse Redis URL:', error);
+    }
+  }
+
+  return null;
+}
+
+// Only initialize Redis in production with credentials
+const credentials = IS_PRODUCTION ? getRedisCredentials() : null;
+const redis = credentials
+  ? new Redis({
+      url: credentials.url,
+      token: credentials.token,
     })
   : null;
+
+if (redis) {
+  console.log('[redis-cache] Redis initialized with URL:', credentials!.url);
+} else if (IS_PRODUCTION) {
+  console.warn('[redis-cache] Redis not initialized - missing credentials');
+}
 
 interface CachedData {
   tasks: NotionTask[];
