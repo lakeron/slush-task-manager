@@ -52,8 +52,19 @@ export default function TaskDashboard() {
   const queryParams = new URLSearchParams();
   const swrKey = queryParams.toString() ? `/api/tasks?${queryParams.toString()}` : '/api/tasks';
 
-  const { data, error, isLoading } = useSWR(swrKey, fetcher);
+  const { data, error, isLoading, mutate: mutateTasks } = useSWR(swrKey, fetcher);
   const { data: assignOptionsData } = useSWR('/api/assign-options', fetcher, { revalidateOnFocus: false });
+
+  // Listen for force refresh events from StoreStatusIndicator
+  useEffect(() => {
+    const handleForceRefresh = () => {
+      console.log('[TaskDashboard] Force refresh triggered');
+      mutateTasks();
+    };
+
+    window.addEventListener('force-refresh-tasks', handleForceRefresh);
+    return () => window.removeEventListener('force-refresh-tasks', handleForceRefresh);
+  }, [mutateTasks]);
 
   const tasks: NotionTask[] = data?.tasks || [];
 

@@ -26,12 +26,13 @@ const fetcher = async (url: string) => {
 };
 
 export default function StoreStatusIndicator() {
-  const { data: stats, error } = useSWR<StoreStats>('/api/store-stats', fetcher, {
+  const { data: stats, error, mutate } = useSWR<StoreStats>('/api/store-stats', fetcher, {
     refreshInterval: 5000, // Update every 5 seconds
     revalidateOnFocus: false,
   });
 
   const [currentTime, setCurrentTime] = useState(Date.now());
+  const [isForceRefreshing, setIsForceRefreshing] = useState(false);
 
   // Update current time every second for relative time display
   useEffect(() => {
@@ -41,11 +42,34 @@ export default function StoreStatusIndicator() {
     return () => clearInterval(interval);
   }, []);
 
+  // Handle force refresh
+  const handleForceRefresh = async () => {
+    if (isForceRefreshing) return; // Prevent double-clicks
+    
+    setIsForceRefreshing(true);
+    try {
+      const response = await fetch('/api/refresh', { method: 'POST' });
+      if (!response.ok) {
+        throw new Error('Failed to refresh');
+      }
+      
+      // Refresh stats and task list
+      await mutate();
+      // Also trigger a reload of the tasks list
+      window.dispatchEvent(new CustomEvent('force-refresh-tasks'));
+    } catch (error) {
+      console.error('Force refresh failed:', error);
+    } finally {
+      setIsForceRefreshing(false);
+    }
+  };
+
   if (error || !stats) {
     return null; // Don't show if there's an error or no data
   }
 
   const { ageSeconds, refreshInterval, isRefreshing, isInCooldown, cooldownSeconds, lastError, useRedis, cacheExists, cacheTTL } = stats;
+  const showSpinner = isRefreshing || isForceRefreshing;
 
   // Helper function to format time ago
   const formatTimeAgo = (seconds: number | null): string => {
@@ -59,13 +83,19 @@ export default function StoreStatusIndicator() {
   if (useRedis) {
     if (!cacheExists) {
       return (
-        <div
-          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600"
-          title="Upstash Redis: Cache empty, will fetch on next request"
+        <button
+          onClick={handleForceRefresh}
+          disabled={isForceRefreshing}
+          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+          title="Click to refresh from Notion"
         >
-          <Clock className="w-3 h-3" />
-          <span>Cache empty</span>
-        </div>
+          {showSpinner ? (
+            <RefreshCw className="w-3 h-3 animate-spin" />
+          ) : (
+            <Clock className="w-3 h-3" />
+          )}
+          <span>{showSpinner ? 'Refreshing...' : 'Cache empty'}</span>
+        </button>
       );
     }
 
@@ -74,13 +104,21 @@ export default function StoreStatusIndicator() {
     const ageDisplay = ageSeconds ? formatTimeAgo(ageSeconds) : 'just now';
     
     return (
-      <div
-        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium bg-green-100 text-green-700"
-        title={`Upstash Redis cached • Expires in ${cacheTTL}s`}
+      <button
+        onClick={handleForceRefresh}
+        disabled={isForceRefreshing}
+        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium bg-green-100 text-green-700 hover:bg-green-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+        title="Click to refresh from Notion"
       >
-        <CheckCircle className="w-3 h-3" />
-        <span>Cached {ageDisplay} • {ttlDisplay}</span>
-      </div>
+        {showSpinner ? (
+          <RefreshCw className="w-3 h-3 animate-spin" />
+        ) : (
+          <CheckCircle className="w-3 h-3" />
+        )}
+        <span>
+          {showSpinner ? 'Refreshing...' : `Cached ${ageDisplay} • ${ttlDisplay}`}
+        </span>
+      </button>
     );
   }
 
@@ -132,22 +170,26 @@ export default function StoreStatusIndicator() {
   const statusColor = getStatusColor();
 
   return (
-    <div
+    <button
+      onClick={handleForceRefresh}
+      disabled={isForceRefreshing || isInCooldown}
       className={cn(
-        'inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium transition-colors',
+        'inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium transition-colors cursor-pointer',
         statusColor.bg,
-        statusColor.text
+        statusColor.text,
+        'hover:opacity-80 disabled:opacity-50 disabled:cursor-not-allowed'
       )}
+      title="Click to refresh from Notion"
     >
-      {isRefreshing ? (
+      {showSpinner ? (
         <RefreshCw className="w-3 h-3 animate-spin" />
       ) : (
         statusColor.icon
       )}
       
       <span>
-        {isRefreshing ? (
-          'Updating...'
+        {showSpinner ? (
+          'Refreshing...'
         ) : isInCooldown ? (
           `Cooldown (${cooldownSeconds}s)`
         ) : (
@@ -161,10 +203,10 @@ export default function StoreStatusIndicator() {
       </span>
 
       {/* Optional: Show task count */}
-      {stats.taskCount > 0 && !isRefreshing && !isInCooldown && (
+      {stats.taskCount > 0 && !showSpinner && !isInCooldown && (
         <span className="opacity-60">• {stats.taskCount} tasks</span>
       )}
-    </div>
+    </button>
   );
 }
 

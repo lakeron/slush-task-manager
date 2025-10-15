@@ -3,7 +3,7 @@ import { getNotionTasks } from './notion.js';
 import { getCachedTasks, setCachedTasks, getCacheStats, isRedisAvailable } from './redis-cache.js';
 
 // Configuration from environment variables
-const REFRESH_INTERVAL_SECONDS = Number(process.env.REFRESH_INTERVAL_SECONDS || 60);
+const REFRESH_INTERVAL_SECONDS = Number(process.env.REFRESH_INTERVAL_SECONDS || 300); // Default 5 minutes
 const RATE_LIMIT_COOLDOWN_SECONDS = Number(process.env.RATE_LIMIT_COOLDOWN_SECONDS || 60);
 const USE_REDIS = isRedisAvailable();
 
@@ -238,10 +238,29 @@ export async function getStoreStats() {
 
 /**
  * Force an immediate refresh (for testing/debugging)
+ * Works with both Redis and in-memory store
  */
-export async function forceRefresh(): Promise<void> {
-  store.cooldownUntil = null; // Clear cooldown
-  await refreshFromNotion();
+export async function forceRefresh(): Promise<NotionTask[]> {
+  console.log('[memory-store] Force refresh requested');
+  
+  // Clear cooldown for local store
+  store.cooldownUntil = null;
+  
+  // Fetch fresh data from Notion
+  const tasks = await getNotionTasks();
+  
+  // Update both stores
+  if (USE_REDIS) {
+    console.log('[memory-store] Updating Redis cache with fresh data');
+    await setCachedTasks(tasks);
+  } else {
+    console.log('[memory-store] Updating in-memory store with fresh data');
+    store.tasks = tasks;
+    store.fetchedAt = nowMs();
+  }
+  
+  console.log(`[memory-store] Force refresh complete: ${tasks.length} tasks`);
+  return tasks;
 }
 
 /**

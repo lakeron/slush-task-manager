@@ -1,7 +1,7 @@
 import { Redis } from '@upstash/redis';
 import { NotionTask } from '../types/notion';
 
-const CACHE_TTL_SECONDS = Number(process.env.CACHE_TTL_SECONDS || 60);
+const CACHE_TTL_SECONDS = Number(process.env.CACHE_TTL_SECONDS || 300); // Default 5 minutes
 const IS_PRODUCTION = process.env.VERCEL === '1' || process.env.NODE_ENV === 'production';
 
 /**
