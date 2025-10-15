@@ -23,7 +23,6 @@ export default function TaskDashboard() {
     sortOrder: 'desc',
   });
   const [showCompleted, setShowCompleted] = useState(false);
-  const [teamFilter, setTeamFilter] = useState('');
   const [assigneeFilter, setAssigneeFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [updatingIds, setUpdatingIds] = useState<Set<string>>(new Set());
@@ -32,9 +31,7 @@ export default function TaskDashboard() {
 
   useEffect(() => {
     const url = new URL(window.location.href);
-    const team = url.searchParams.get('team') || '';
     const assignee = url.searchParams.get('assignee') || '';
-    if (team !== teamFilter) setTeamFilter(team);
     if (assignee !== assigneeFilter) setAssigneeFilter(assignee);
     // status left out intentionally unless needed later
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -43,13 +40,12 @@ export default function TaskDashboard() {
   // Sync filters to URL (CSR)
   useEffect(() => {
     const url = new URL(window.location.href);
-    if (teamFilter) url.searchParams.set('team', teamFilter); else url.searchParams.delete('team');
     if (assigneeFilter) url.searchParams.set('assignee', assigneeFilter); else url.searchParams.delete('assignee');
     const q = url.searchParams.toString();
     const newUrl = q ? `${url.pathname}?${q}` : url.pathname;
     window.history.replaceState({}, '', newUrl);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [teamFilter, assigneeFilter, filters.sortBy, filters.sortOrder]);
+  }, [assigneeFilter, filters.sortBy, filters.sortOrder]);
 
   // Always fetch full dataset; apply filters client-side so dropdowns include all options
   const queryParams = new URLSearchParams();
@@ -60,15 +56,14 @@ export default function TaskDashboard() {
 
   const tasks: NotionTask[] = data?.tasks || [];
 
-  // Apply client-side filters for assignee/team to ensure correctness
+  // Apply client-side filters for assignee to ensure correctness
   const selectionFiltered = tasks.filter((task) => {
-    const teamOk = teamFilter ? task.team === teamFilter : true;
     const assigneeOk = assigneeFilter ? (task.assign === assigneeFilter) : true;
     const q = searchQuery.trim().toLowerCase();
     const searchOk = q
       ? ((task.title || '').toLowerCase().includes(q) || (task.description || '').toLowerCase().includes(q))
       : true;
-    return teamOk && assigneeOk && searchOk;
+    return assigneeOk && searchOk;
   });
 
   // Filter tasks based on completion status
@@ -115,8 +110,7 @@ export default function TaskDashboard() {
     return sortOrder === 'asc' ? cmp : -cmp;
   });
 
-  // Get unique teams and assignees for filter dropdowns
-  const uniqueTeams = Array.from(new Set(tasks.map(task => task.team).filter(Boolean)));
+  // Get unique assignees for filter dropdown
   const uniqueAssignOptions = (assignOptionsData?.options as string[] | undefined) || Array.from(new Set(tasks.map(t => t.assign).filter(Boolean) as string[]));
 
   const handleStatusChange = async (taskId: string, newStatus: string, action?: 'start' | 'done' | 'reopen') => {
@@ -154,37 +148,6 @@ export default function TaskDashboard() {
       setStatusActionById(prev => {
         const next = { ...prev };
         delete next[taskId];
-        return next;
-      });
-    }
-  };
-
-  const handleInlineUpdate = async (
-    taskId: string,
-    updates: { team?: string | null; assigneeId?: string | null }
-  ) => {
-    try {
-      setUpdatingIds(prev => {
-        const next = new Set(prev);
-        next.add(taskId);
-        return next;
-      });
-      const response = await fetch(`/api/tasks/${taskId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updates),
-      });
-      if (response.ok) {
-        mutate(swrKey);
-      } else {
-        console.error('Failed to update task');
-      }
-    } catch (e) {
-      console.error('Error updating task:', e);
-    } finally {
-      setUpdatingIds(prev => {
-        const next = new Set(prev);
-        next.delete(taskId);
         return next;
       });
     }
@@ -244,16 +207,6 @@ export default function TaskDashboard() {
               className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
-          <select
-            value={teamFilter}
-            onChange={(e) => setTeamFilter(e.target.value)}
-            className="w-full sm:w-auto pl-3 pr-8 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="">All Teams</option>
-            {uniqueTeams.map(team => (
-              <option key={team} value={team}>{team}</option>
-            ))}
-          </select>
 
           <select
             value={assigneeFilter}
@@ -348,49 +301,24 @@ export default function TaskDashboard() {
                     )}
                   </div>
 
-                  <div className="flex items-center gap-2 text-sm text-gray-600 w-full">
-                    <Users className="w-4 h-4" />
-                    <select
-                      value={task.team || ''}
-                      onChange={(e) => {
-                        const value = (e.target as HTMLSelectElement).value || '';
-                        handleInlineUpdate(task.id, { team: value || null });
-                      }}
-                      className="flex-1 w-full pl-2 pr-6 py-1 border border-gray-300 rounded-md text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-700"
-                    >
-                      <option value="">No Team</option>
-                      {uniqueTeams.map(team => (
-                        <option key={team} value={team}>{team}</option>
-                      ))}
-                    </select>
-                  </div>
+                  {task.team && (
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <Users className="w-4 h-4" />
+                      <span className="text-gray-700">{task.team}</span>
+                    </div>
+                  )}
 
-                  <div className="flex items-center gap-2 text-sm text-gray-600 w-full">
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
                     <User className="w-4 h-4" />
-                    <select
-                      value={task.assign || ''}
-                      onChange={(e) => {
-                        const value = (e.target as HTMLSelectElement).value || '';
-                        handleInlineUpdate(task.id, {});
-                        fetch(`/api/tasks/${task.id}`, {
-                          method: 'PATCH',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ assign: value || null })
-                        }).then(() => mutate(swrKey));
-                      }}
-                      className="flex-1 w-full pl-2 pr-6 py-1 border border-gray-300 rounded-md text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-700"
-                    >
-                      <option value="">Unassigned</option>
-                      {uniqueAssignOptions.map(name => (
-                        <option key={name} value={name}>{name}</option>
-                      ))}
-                    </select>
+                    <span className="text-gray-700">{task.assign || 'Unassigned'}</span>
                   </div>
 
-                  <div className="flex items-center gap-1 text-sm text-gray-600">
-                    <Calendar className="w-4 h-4" />
-                    {task.dueDate ? `Due: ${formatDate(task.dueDate)}` : `Created: ${formatDate(task.createdDate)}`}
-                  </div>
+                  {task.dueDate && (
+                    <div className="flex items-center gap-1 text-sm text-gray-600">
+                      <Calendar className="w-4 h-4" />
+                      Due: {formatDate(task.dueDate)}
+                    </div>
+                  )}
                 </div>
 
                 {/* Action Buttons */}

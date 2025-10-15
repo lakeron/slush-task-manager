@@ -8,11 +8,28 @@ export function cn(...inputs: ClassValue[]) {
 
 export function formatDate(dateString: string): string {
   const date = new Date(dateString);
-  return date.toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  });
+  
+  // Check if the time component is meaningful (not midnight UTC)
+  const hasTime = date.getUTCHours() !== 0 || date.getUTCMinutes() !== 0;
+  
+  if (hasTime) {
+    // Format with date and time
+    return date.toLocaleString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    });
+  } else {
+    // Format date only
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
+  }
 }
 
 export function sortTasks(tasks: NotionTask[], sortBy: string, sortOrder: 'asc' | 'desc' = 'desc'): NotionTask[] {
