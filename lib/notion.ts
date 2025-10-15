@@ -17,17 +17,36 @@ const notion = new Client({
 
 export async function getNotionTasks(): Promise<NotionTask[]> {
   try {
-    const response = await notion.databases.query({
-      database_id: NOTION_DATABASE_ID,
-      sorts: [
-        {
-          timestamp: 'created_time',
-          direction: 'descending',
-        },
-      ],
-    });
+    const allResults: any[] = [];
+    let hasMore = true;
+    let startCursor: string | undefined = undefined;
 
-    return response.results.map((page: any) => {
+    // Paginate through all results
+    while (hasMore) {
+      const response = await notion.databases.query({
+        database_id: NOTION_DATABASE_ID,
+        start_cursor: startCursor,
+        sorts: [
+          {
+            timestamp: 'created_time',
+            direction: 'descending',
+          },
+        ],
+      });
+
+      allResults.push(...response.results);
+      hasMore = response.has_more;
+      startCursor = response.next_cursor || undefined;
+
+      // Log pagination progress
+      if (hasMore) {
+        console.log(`[notion] Fetched ${allResults.length} tasks so far, fetching more...`);
+      }
+    }
+
+    console.log(`[notion] Total tasks fetched: ${allResults.length}`);
+
+    return allResults.map((page: any) => {
       const properties = page.properties;
 
       return {
