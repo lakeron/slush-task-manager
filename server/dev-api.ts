@@ -7,6 +7,7 @@ import assignOptionsHandler from '../api/assign-options';
 import assigneesHandler from '../api/assignees';
 import taskIdHandler from '../api/tasks/[id]';
 import healthHandler from '../api/health';
+import storeStatsHandler from '../api/store-stats';
 
 const app = express();
 const PORT = Number(process.env.PORT || 3000);
@@ -23,6 +24,7 @@ app.get('/api/tasks', (req, res) => tasksHandler(req as any, res as any));
 app.get('/api/assign-options', (req, res) => assignOptionsHandler(req as any, res as any));
 app.get('/api/assignees', (req, res) => assigneesHandler(req as any, res as any));
 app.get('/api/health', (req, res) => healthHandler(req as any, res as any));
+app.get('/api/store-stats', (req, res) => storeStatsHandler(req as any, res as any));
 app.patch('/api/tasks/:id', (req, res) => {
   // Adapt Express params -> handler expects query.id
   const adaptedReq = Object.assign({}, req, {

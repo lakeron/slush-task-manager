@@ -5,6 +5,7 @@ import useSWR, { mutate } from 'swr';
 import { NotionTask, FilterOptions } from '../types/notion';
 import { formatDate, sortTasks, getStatusColor, getPriorityColor, cn } from '../lib/utils';
 import { ChevronDown, Filter, Calendar, User, Users, CheckCircle, Clock, ExternalLink, Loader2, Play, Check, RotateCcw, Search } from 'lucide-react';
+import StoreStatusIndicator from './StoreStatusIndicator';
 // Next.js navigation removed; using window.history and URLSearchParams instead
 
 const fetcher = async (url: string) => {
@@ -168,7 +169,7 @@ export default function TaskDashboard() {
     <div className="space-y-6">
       {/* Header Controls */}
       <div className="flex flex-col gap-4">
-        <div className="flex items-center gap-4 w-full justify-between sm:justify-start">
+        <div className="flex flex-wrap items-center gap-4 w-full">
           <h2 className="text-2xl font-bold text-gray-900">
             {showCompleted ? 'Completed Tasks' : 'Active Tasks'}
           </h2>
@@ -193,6 +194,7 @@ export default function TaskDashboard() {
               </>
             )}
           </button>
+          <StoreStatusIndicator />
         </div>
 
         {/* Filters + Sort (desktop inline) */}
