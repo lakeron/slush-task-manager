@@ -47,6 +47,14 @@ export default function StoreStatusIndicator() {
 
   const { ageSeconds, refreshInterval, isRefreshing, isInCooldown, cooldownSeconds, lastError, useRedis, cacheExists, cacheTTL } = stats;
 
+  // Helper function to format time ago
+  const formatTimeAgo = (seconds: number | null): string => {
+    if (!seconds) return 'Never';
+    if (seconds < 60) return `${Math.floor(seconds)}s ago`;
+    if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+    return `${Math.floor(seconds / 3600)}h ago`;
+  };
+
   // In Redis mode: Show Upstash cache status
   if (useRedis) {
     if (!cacheExists) {
@@ -119,13 +127,6 @@ export default function StoreStatusIndicator() {
         icon: <AlertCircle className="w-3 h-3" />,
       };
     }
-  };
-
-  const formatTimeAgo = (seconds: number | null): string => {
-    if (!seconds) return 'Never';
-    if (seconds < 60) return `${Math.floor(seconds)}s ago`;
-    if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
-    return `${Math.floor(seconds / 3600)}h ago`;
   };
 
   const statusColor = getStatusColor();
