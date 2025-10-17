@@ -59,9 +59,17 @@ export function sortTasks(tasks: NotionTask[], sortBy: string, sortOrder: 'asc' 
         bValue = b.createdDate;
     }
 
-    if (!aValue && !bValue) return 0;
-    if (!aValue) return 1;
-    if (!bValue) return -1;
+    // Special handling for dueDate DESC: tasks without due date come first
+    if (sortBy === 'dueDate' && sortOrder === 'desc') {
+      if (!aValue && !bValue) return 0;
+      if (!aValue) return -1; // Tasks without due date go first
+      if (!bValue) return 1;  // Tasks without due date go first
+    } else {
+      // Default behavior: tasks without values go last
+      if (!aValue && !bValue) return 0;
+      if (!aValue) return 1;
+      if (!bValue) return -1;
+    }
 
     const comparison = aValue.localeCompare(bValue);
     return sortOrder === 'asc' ? comparison : -comparison;
