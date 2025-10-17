@@ -90,18 +90,10 @@ export default function TaskDashboard() {
     }
   });
 
-  // Sort tasks: when active, prioritize In Progress over Not Started, then apply selected sort
-  const getStatusWeight = (status: string) => {
-    const s = (status || '').trim().toLowerCase();
-    return s === 'in progress' ? 0 : s === 'not started' ? 1 : 2;
-  };
+  // Sort tasks by due date only (no status-based sorting)
   const sortedTasks = [...filteredTasks].sort((a, b) => {
-    if (!showCompleted) {
-      const weightDiff = getStatusWeight(a.status) - getStatusWeight(b.status);
-      if (weightDiff !== 0) return weightDiff;
-    }
     const sortBy = filters.sortBy || 'dueDate';
-    const sortOrder = filters.sortOrder || 'desc';
+    const sortOrder = filters.sortOrder || 'asc';
     const getVal = (t: NotionTask): string => {
       switch (sortBy) {
         case 'dueDate':
@@ -118,6 +110,14 @@ export default function TaskDashboard() {
     };
     const aValue = getVal(a);
     const bValue = getVal(b);
+    
+    // Special handling for dueDate: tasks without due date always come first
+    if (sortBy === 'dueDate') {
+      if (!aValue && !bValue) return 0;
+      if (!aValue) return -1; // Tasks without due date go first
+      if (!bValue) return 1;  // Tasks without due date go first
+    }
+    
     const cmp = aValue.localeCompare(bValue);
     return sortOrder === 'asc' ? cmp : -cmp;
   });
