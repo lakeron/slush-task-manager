@@ -59,8 +59,8 @@ export function sortTasks(tasks: NotionTask[], sortBy: string, sortOrder: 'asc' 
         bValue = b.createdDate;
     }
 
-    // Special handling for dueDate DESC: tasks without due date come first
-    if (sortBy === 'dueDate' && sortOrder === 'desc') {
+    // Special handling for dueDate: tasks without due date always come first
+    if (sortBy === 'dueDate') {
       if (!aValue && !bValue) return 0;
       if (!aValue) return -1; // Tasks without due date go first
       if (!bValue) return 1;  // Tasks without due date go first

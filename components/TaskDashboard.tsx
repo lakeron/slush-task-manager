@@ -21,7 +21,7 @@ export default function TaskDashboard() {
   // Hydrate filters from URL (CSR)
   const [filters, setFilters] = useState<FilterOptions>({
     sortBy: 'dueDate',
-    sortOrder: 'desc',
+    sortOrder: 'asc', // Past to future (earliest dates first)
   });
   const [showCompleted, setShowCompleted] = useState(false);
   const [assigneeFilter, setAssigneeFilter] = useState('');
