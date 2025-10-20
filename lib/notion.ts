@@ -62,7 +62,8 @@ export async function getNotionTasks(): Promise<NotionTask[]> {
         status: properties.Status?.select?.name || 'Not Started',
         assignee: properties.Assignee?.people?.[0]?.name || undefined,
         assigneeId: properties.Assignee?.people?.[0]?.id || undefined,
-        assign: properties.Assign?.select?.name ||
+        assign: properties.Assign?.multi_select?.[0]?.name ||
+                properties.Assign?.select?.name ||
                 properties['Assigned to']?.select?.name ||
                 properties['Assigned To']?.select?.name ||
                 properties.assignedTo?.select?.name ||
@@ -147,7 +148,7 @@ export async function updateTaskAssign(taskId: string, assignName: string | null
       page_id: taskId,
       properties: {
         Assign: {
-          select: assignName ? { name: assignName } : null,
+          multi_select: assignName ? [{ name: assignName }] : [],
         },
       },
     });
@@ -177,7 +178,7 @@ export async function getAssignOptions(): Promise<string[]> {
     // Debug: Log the found assign property
     console.log('[getAssignOptions] Found assign property:', assignProp ? assignProp.type : 'none', assignProp);
 
-    const options: string[] = (assignProp?.select?.options || []).map((o: any) => o?.name).filter(Boolean);
+    const options: string[] = (assignProp?.multi_select?.options || assignProp?.select?.options || []).map((o: any) => o?.name).filter(Boolean);
     console.log('[getAssignOptions] Extracted options:', options);
 
     options.sort((a, b) => a.localeCompare(b));
@@ -253,7 +254,8 @@ export async function getFilteredTasks(filters: {
         status: properties.Status?.select?.name || 'Not Started',
         assignee: properties.Assignee?.people?.[0]?.name || undefined,
         assigneeId: properties.Assignee?.people?.[0]?.id || undefined,
-          assign: properties.Assign?.select?.name ||
+          assign: properties.Assign?.multi_select?.[0]?.name ||
+                properties.Assign?.select?.name ||
                 properties['Assigned to']?.select?.name ||
                 properties['Assigned To']?.select?.name ||
                 properties.assignedTo?.select?.name ||
