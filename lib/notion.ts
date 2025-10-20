@@ -46,8 +46,15 @@ export async function getNotionTasks(): Promise<NotionTask[]> {
 
     console.log(`[notion] Total tasks fetched: ${allResults.length}`);
 
-    return allResults.map((page: any) => {
+    return allResults.map((page: any, index: number) => {
       const properties = page.properties;
+
+      // Debug: Log properties of first few tasks to understand structure
+      if (index < 3) {
+        console.log(`[getNotionTasks] Task ${index} properties:`, Object.keys(properties));
+        console.log(`[getNotionTasks] Task ${index} Assign property:`, properties.Assign);
+        console.log(`[getNotionTasks] Task ${index} Assignee property:`, properties.Assignee);
+      }
 
       return {
         id: page.id,
@@ -55,7 +62,13 @@ export async function getNotionTasks(): Promise<NotionTask[]> {
         status: properties.Status?.select?.name || 'Not Started',
         assignee: properties.Assignee?.people?.[0]?.name || undefined,
         assigneeId: properties.Assignee?.people?.[0]?.id || undefined,
-        assign: properties.Assign?.select?.name || undefined,
+        assign: properties.Assign?.select?.name ||
+                properties['Assigned to']?.select?.name ||
+                properties['Assigned To']?.select?.name ||
+                properties.assignedTo?.select?.name ||
+                properties.assigned?.select?.name ||
+                properties.Assignee?.people?.[0]?.name ||
+                undefined,
         team: properties.Team?.select?.name || undefined,
         dueDate: properties['Due Date']?.date?.start || undefined,
         createdDate: page.created_time,
@@ -147,8 +160,26 @@ export async function updateTaskAssign(taskId: string, assignName: string | null
 export async function getAssignOptions(): Promise<string[]> {
   try {
     const meta = await notion.databases.retrieve({ database_id: NOTION_DATABASE_ID });
-    const assignProp = (meta as any)?.properties?.Assign;
+
+    // Debug: Log all available properties
+    console.log('[getAssignOptions] Available database properties:', Object.keys((meta as any)?.properties || {}));
+
+    // Check for different possible field names
+    const properties = (meta as any)?.properties || {};
+    let assignProp = properties.Assign ||
+                    properties['Assigned to'] ||
+                    properties['Assigned To'] ||
+                    properties.assignedTo ||
+                    properties.assigned ||
+                    properties.Assignee ||
+                    properties.assignee;
+
+    // Debug: Log the found assign property
+    console.log('[getAssignOptions] Found assign property:', assignProp ? assignProp.type : 'none', assignProp);
+
     const options: string[] = (assignProp?.select?.options || []).map((o: any) => o?.name).filter(Boolean);
+    console.log('[getAssignOptions] Extracted options:', options);
+
     options.sort((a, b) => a.localeCompare(b));
     return options;
   } catch (error: any) {
@@ -222,7 +253,13 @@ export async function getFilteredTasks(filters: {
         status: properties.Status?.select?.name || 'Not Started',
         assignee: properties.Assignee?.people?.[0]?.name || undefined,
         assigneeId: properties.Assignee?.people?.[0]?.id || undefined,
-          assign: properties.Assign?.select?.name || undefined,
+          assign: properties.Assign?.select?.name ||
+                properties['Assigned to']?.select?.name ||
+                properties['Assigned To']?.select?.name ||
+                properties.assignedTo?.select?.name ||
+                properties.assigned?.select?.name ||
+                properties.Assignee?.people?.[0]?.name ||
+                undefined,
         team: properties.Team?.select?.name || undefined,
         dueDate: properties['Due Date']?.date?.start || undefined,
         createdDate: page.created_time,
